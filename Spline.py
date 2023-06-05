@@ -9,11 +9,11 @@ def spline(xData, yData, distance, indicies_intervals):  # distance - indicies_i
     x_interpolated = np.array(xData[::indicies_intervals])
     y_interpolated = np.array(yData[::indicies_intervals])
 
-    # S0(x0) = f(x0) = [a0 * 1] + [b0 * 0] + [c0 * 0] + [d0 * 0] + [a1 * 0] + ...  -->  [a0 * 1] = f(x0)
+    # S0(x0) = f(x0)
     matrix[0][0] = 1
     result_matrix[0][0] = y_interpolated[0]
 
-    # S0(x1) = f(x1)  -->  [a0 * 1] + [b0 * h] + [c0 * h^2] + [d0 * h^3] = f(x1)
+    # S0(x1) = f(x1)
     h = x_interpolated[1] - x_interpolated[0]
     matrix[1][0] = 1
     matrix[1][1] = h
@@ -37,21 +37,21 @@ def spline(xData, yData, distance, indicies_intervals):  # distance - indicies_i
         matrix[4 * i][4 * i] = 1
         result_matrix[4 * i][0] = y_interpolated[i]
 
-        # Si(xi+1) = f(x+1)  -->  [ai * 1] + [bi * h] + [ci * h^2] + [di * h^3] = f(xi+1)
+        # Si(xi+1) = f(xi+1)
         matrix[4 * i + 1][4 * i] = 1
         matrix[4 * i + 1][4 * i + 1] = h
         matrix[4 * i + 1][4 * i + 2] = pow(h, 2)
         matrix[4 * i + 1][4 * i + 3] = pow(h, 3)
         result_matrix[4 * i + 1][0] = y_interpolated[i + 1]
 
-        # S'i-1(xi) = S'i(xi)  -->  [bi-1 * 1] + [ci-1 * 2 * h] + [di-1 * 3 * h^2] = [bi]  -->  [bi-1 * 1] + [ci-1 * 2 * h] + [di-1 * 3 * h^2] + [bi * (-1)] = 0
+        # S'i-1(xi) = [bi-1 * 1] + [ci-1 * 2 * h] + [di-1 * 3 * h^2] + [bi * (-1)] = 0
         matrix[4 * i + 2][4 * (i - 1) + 1] = 1
         matrix[4 * i + 2][4 * (i - 1) + 2] = 2 * h
         matrix[4 * i + 2][4 * (i - 1) + 3] = 3 * pow(h, 2)
         matrix[4 * i + 2][4 * i + 1] = -1
         result_matrix[4 * i + 2][0] = 0
 
-        # S''i-1(xi) = S''i(xi)  -->  [ci-1 * 2] + [di-1 * 6 * h] = [ci * 2]  -->  [ci-1 * 2] + [di-1 * 6 * h] + [ci * (-2)] = 0
+        # S''i-1(xi) = [ci-1 * 2] + [di-1 * 6 * h] + [ci * (-2)] = 0
         matrix[4 * i + 3][4 * (i - 1) + 2] = 2
         matrix[4 * i + 3][4 * (i - 1) + 3] = 6 * h
         matrix[4 * i + 3][4 * i + 2] = -2

@@ -5,61 +5,83 @@ import matplotlib.pyplot as plt
 import LaGrange
 import Spline
 
-SAMPLES = 480
+SAMPLES = 480  # limitation of samples taken from the file (default they have 512 samples)
+DENSITIES = [16, 32, 48, 80]  # list of possible densities
+DIVISION_DENSITY = DENSITIES[1]  # this variable means that for every x where 32*x there is an interpolated point
+HOW_MANY_POINTS = round(SAMPLES / DIVISION_DENSITY) + 1  # counter of interpolated points
+STEP = 8  # how much space is needed between each point when calculating interpolated values
+FILE_NAME = "SpacerniakGdansk"
 
-path = "dane/MountEverest.csv"
-f = open(path, "r")  # uchwyt do pliku
-data = list(csv.reader(f, delimiter=","))
-f.close()
-dataArray = np.array(data)
-xData = np.array(dataArray[:SAMPLES+1, 0]).astype(np.float64)
-yData = np.array(dataArray[:SAMPLES+1, 1]).astype(np.float64)
+################################
+# reading file and setting variables to further work
+
+path = "dane/" + FILE_NAME + ".csv"
+f = open(path, "r")  # handle to the file
+data = list(csv.reader(f, delimiter=","))  # open csv file
+f.close()  # close file stream
+dataArray = np.array(data)  # create array from the file data
+xData = np.array(dataArray[:SAMPLES+1, 0]).astype(np.float64)  # an array containing x values from csv file
+yData = np.array(dataArray[:SAMPLES+1, 1]).astype(np.float64)  # an array containing y values from csv file
+TOTAL_DISTANCE = xData[SAMPLES - 1]  # distance from the start point to the end point
+
+################################
+
+################################
+# plotting a chart for a given file
 
 fig, ax = plt.subplots()
 ax.plot(xData, yData)
 ax.set_title("Aproksymacja profilu wysokościowego")
-ax.set_xlabel("Odległość")
-ax.set_ylabel("Wysokość")
+ax.set_xlabel("Odległość [m]")
+ax.set_ylabel("Wysokość [m]")
 plt.show()
 
-yLaGrange = []
-xLaGrange = []
+################################
 
-ile = 32
+################################
+# Lagrange interpolation
 
-wysokosc = np.array(yData[::ile])
-dlugosc = np.array(xData[::ile])
+yLagrange = []  # making an empty list for y values
+xLagrange = []  # making an empty list for x values
+height_interpolated = np.array(yData[::DIVISION_DENSITY])  # making an array containing interpolated points for height (x)
+distance_interpolated = np.array(xData[::DIVISION_DENSITY])  # making an array containing interpolated points for distance (y)
 
-odleglosc = xData[SAMPLES-1]
 i = 0
-while i <= odleglosc:
-    yLaGrange.append(LaGrange.lagrange(i, dlugosc, wysokosc))
-    xLaGrange.append(i)
-    i += 8
+while i <= TOTAL_DISTANCE:
+    yLagrange.append(LaGrange.lagrange(i, distance_interpolated, height_interpolated))  # calculating y(x)
+    xLagrange.append(i)  # appending current step
+    i += STEP  # increasing i by a step
 
 fig, ax = plt.subplots()
-ax.plot(xData, yData)
-ax.plot(xLaGrange, yLaGrange)
-ax.set_title("Interpolacja LaGrange'a")
-ax.set_xlabel("Odległość")
-ax.set_ylabel("Wysokość")
+ax.plot(xData, yData, color='b', label="Oryginalne dane")
+ax.plot(xLagrange, yLagrange, color='orange', label="Wartości interpolowane")
+ax.scatter(distance_interpolated, height_interpolated, label='Interpolowane punkty', color='red')
+ax.legend()
+ax.set_title(f"Interpolacja Lagrange'a {FILE_NAME} dla {HOW_MANY_POINTS} punktów")
+ax.set_xlabel("Odległość [m]")
+ax.set_ylabel("Wysokość [m]")
 plt.show()
 
-sklejanePunkty = []
-krok = 8
-indeks = 0
-ileKrokow = round(odleglosc/krok)
-for i in range(ileKrokow):
-    sklejanePunkty.append(Spline.spline(xData, yData, i * krok, 32))
+################################
 
-x = np.arange(0, ileKrokow * krok, krok)
-y = np.array(sklejanePunkty).astype(np.float64)
+################################
+# Spline interpolation
+
+spline_points = []  # making an empty list
+how_many_steps = round(TOTAL_DISTANCE / STEP)
+for i in range(how_many_steps):
+    spline_points.append(Spline.spline(xData, yData, i * STEP, DIVISION_DENSITY))  # y(x)
+
+x = np.arange(0, how_many_steps * STEP, STEP)
+y = np.array(spline_points).astype(np.float64)
 fig, ax = plt.subplots()
-ax.plot(xData, yData)
-ax.plot(x, y)
-ax.set_title("Interpolacja funkcjami sklejanymi")
-ax.set_xlabel("Dystans")
-ax.set_ylabel("Wysokość")
+ax.plot(xData, yData, color='b', label="Oryginalne dane")
+ax.plot(x, y, color='orange', label="Wartości interpolowane")
+ax.scatter(distance_interpolated, height_interpolated, label='Interpolowane punkty', color='red')
+ax.legend()
+ax.set_title(f"Interpolacja funkcjami sklejanymi {FILE_NAME} dla {HOW_MANY_POINTS} punktów")
+ax.set_xlabel("Odległość [m]")
+ax.set_ylabel("Wysokość [m]")
 plt.show()
 
-
+################################
